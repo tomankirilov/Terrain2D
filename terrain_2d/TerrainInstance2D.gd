@@ -72,7 +72,7 @@ func check_mouse() -> void:
 	# polygon mouse hover effect
 	var index := 0
 	for poly in polygons:
-		if is_circle_circle_collision(mouse_pos, poly):
+		if Terrain2D.is_circle_circle_collision(mouse_pos, poly, POLY_SIZE * 10):
 			var rect := Rect2(Vector2.ONE * poly,Vector2(POLY_SIZE*2,POLY_SIZE*2))
 			rect.position -= POLY_SIZE * Vector2.ONE
 			draw_texture_rect(Terrain2D.ICONS.POLY,rect, false,Color.AQUA)
@@ -85,13 +85,13 @@ func check_mouse() -> void:
 	for i in range(polygons.size()-1):
 		var polygon_start := polygons[i]
 		var polygon_end := polygons[(i+1) % polygons.size()]
-		if is_circle_line_collision(mouse_pos, POLY_SIZE, polygon_start, polygon_end):
+		if Terrain2D.is_circle_line_collision(mouse_pos, POLY_SIZE, polygon_start, polygon_end):
 			draw_line(polygon_start,polygon_end,Color.AQUA,1.2)
-			var rect := Rect2(get_line_midpoint(polygon_start,polygon_end),Vector2(POLY_SIZE*2,POLY_SIZE*2))
+			var rect := Rect2(Terrain2D.get_line_midpoint(polygon_start,polygon_end),Vector2(POLY_SIZE*2,POLY_SIZE*2))
 			rect.position -= POLY_SIZE * Vector2.ONE
 			draw_texture_rect(Terrain2D.ICONS.ADD,rect, false)
 			
-			if is_circle_circle_collision(mouse_pos, rect.position + POLY_SIZE * Vector2.ONE, 20.0):
+			if Terrain2D.is_circle_circle_collision(mouse_pos, rect.position + POLY_SIZE * Vector2.ONE, 20.0):
 				draw_texture_rect(Terrain2D.ICONS.ADD,rect, false,Color.LIME)
 				is_selecting_add = true
 				add_after_index = i
@@ -130,32 +130,8 @@ func check_add_button_pressed() -> void:
 	polygons.insert(add_after_index+1,mouse_pos)
 	queue_redraw()
 
-func is_circle_line_collision(circle_center:Vector2, circle_radius:float, line_start:Vector2, line_end:Vector2) -> bool:
-	# Calculate the line equation
-	var m := (line_end.y - line_start.y) / (line_end.x - line_start.x)
-	var b := line_start.y - m * line_start.x
 
-	# Calculate the closest point on the line to the circle center
-	var px := (circle_center.x + m * circle_center.y - m * b) / (1 + m * m)
-	var py := m * px + b
 
-	# Calculate the distance between the circle center and the closest point on the line
-	var distance := circle_center.distance_to(Vector2(px, py))
-
-	# Check for collision
-	return distance <= circle_radius
-
-func is_circle_circle_collision(circle_a:Vector2, circle_b:Vector2, radius:float = POLY_SIZE * 10) -> bool:
-	
-	var dist := pow(circle_a.x - circle_b.x, 2) + pow(circle_a.y - circle_b.y, 2)
-	
-	if dist < radius:
-		return true
-	
-	return false
-
-func get_line_midpoint(line_start:Vector2, line_end:Vector2, offset:float = 0.0) -> Vector2:
-	return ( (line_start + line_end) * .5 ) - Vector2.ONE * offset
 
 var target_mesh := PackedVector2Array()
 
@@ -172,7 +148,12 @@ func create_mesh() -> void:
 	
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
-	for i in range(0,triangles.size(), 3):
+	#calculate UV to 0-1 range values
+	
+	var min_uv := Vector2.ONE * INF
+	var max_uv := Vector2.ONE * -INF
+	
+	for i in range(0, triangles.size(), 3):
 		
 		var vert1_index := triangles[i]
 		var vert2_index := triangles[i+1]
@@ -183,16 +164,52 @@ func create_mesh() -> void:
 		var vert3 := polygons[vert3_index]
 		
 		target_mesh.append_array([vert1,vert2,vert3])
+		pass
+	
+	for vertex in target_mesh:
+		min_uv.x = min(min_uv.x , vertex.x)
+		min_uv.y = min(min_uv.y , vertex.y)
+		
+		max_uv.x = max(max_uv.x , vertex.x)
+		max_uv.y = max(max_uv.y , vertex.y)
+		pass
+	
+	var scale_uv := Vector2(1.0 / (max_uv.x - min_uv.x), 1.0 / (max_uv.y - min_uv.y))
+	var target_mesh_uv := PackedVector2Array()
+	
+	for i in range(target_mesh.size()):
+		var vertex = target_mesh[i]
+		vertex = Vector2( (vertex.x - min_uv.x) * scale_uv.x,
+						  (vertex.y - min_uv.y) * scale_uv.y )
+		target_mesh_uv.push_back( vertex )
+		pass
+	print(target_mesh_uv)
+	#end uv calculation
+	target_mesh.clear() # TODO: we can remove the vert1,2,3 from below because we already calculated above in UV
+	# but I'm keeping just for testing purposes
+	
+	for i in range(0,triangles.size(), 3):
+		
+		var vert1_index := triangles[i]
+		var vert2_index := triangles[i+1]
+		var vert3_index := triangles[i+2]
+		
+		var vert1 := polygons[vert1_index]
+		var vert2 := polygons[vert2_index]
+		var vert3 := polygons[vert3_index]
+		
+		var uv1 := target_mesh_uv[i]
+		var uv2 := target_mesh_uv[i+1]
+		var uv3 := target_mesh_uv[i+2]
+		
+		target_mesh.append_array([vert1,vert2,vert3])
 		
 		st.set_color(Color.RED)
-		st.set_uv(vert1)
-		#st.add_index(vert1_index)
+		st.set_uv(uv1)
 		st.add_vertex(Vector3(vert1.x,vert1.y,0))
-		#st.add_index(vert2_index)
-		st.set_uv(vert2)
+		st.set_uv(uv2)
 		st.add_vertex(Vector3(vert2.x,vert2.y,0))
-		#st.add_index(vert3_index)
-		st.set_uv(vert3)
+		st.set_uv(uv3)
 		st.add_vertex(Vector3(vert3.x,vert3.y,0))
 		
 		
