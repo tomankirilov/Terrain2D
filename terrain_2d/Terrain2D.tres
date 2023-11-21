@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="TerrainResource" load_steps=2 format=3 uid="uid://bfyrmuvde6766"]
+
+[ext_resource type="Script" path="res://addons/terrain_2d/TerrainResource.gd" id="1_ed1ms"]
+
+[resource]
+script = ExtResource("1_ed1ms")

@@ -1,0 +1,109 @@
+[gd_scene load_steps=9 format=3 uid="uid://dxx360nyimp55"]
+
+[ext_resource type="Script" path="res://addons/terrain_2d/Terrain2D_MenuButtons.gd" id="1_kx37p"]
+[ext_resource type="Texture2D" uid="uid://dxfurp8m30dv4" path="res://addons/terrain_2d/icons/icon-add-island.svg" id="1_s70bd"]
+[ext_resource type="Texture2D" uid="uid://cos7m3n5n86le" path="res://addons/terrain_2d/icons/icon-remove-island.svg" id="2_n87mo"]
+[ext_resource type="ButtonGroup" uid="uid://b01hqjkk5k7a8" path="res://addons/terrain_2d/icons/island_tools_group.tres" id="3_au5h8"]
+[ext_resource type="Texture2D" uid="uid://b4daf0rm0mnxe" path="res://addons/terrain_2d/icons/icon-select-island.svg" id="4_13tnj"]
+[ext_resource type="Texture2D" uid="uid://3fmn0skykner" path="res://addons/terrain_2d/icons/icon-edit-island.svg" id="5_hm3oc"]
+[ext_resource type="Texture2D" uid="uid://c8qki6b28t07f" path="res://addons/terrain_2d/icons/icon-move-island.svg" id="6_rp10j"]
+[ext_resource type="Texture2D" uid="uid://cwy1x8kbmmil1" path="res://addons/terrain_2d/icons/icon-scale-island.svg" id="7_ssakg"]
+
+[node name="MenuButtons" type="HBoxContainer" node_paths=PackedStringArray("button_add", "button_remove", "button_move")]
+offset_right = 40.0
+offset_bottom = 40.0
+alignment = 1
+script = ExtResource("1_kx37p")
+button_add = NodePath("bt_create_island")
+button_remove = NodePath("bt_remove_island")
+button_move = NodePath("FloatIcons/Button")
+
+[node name="VSeparator2" type="VSeparator" parent="."]
+layout_mode = 2
+
+[node name="bt_create_island" type="Button" parent="."]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Create New island"
+disabled = true
+icon = ExtResource("1_s70bd")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="bt_remove_island" type="Button" parent="."]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Remove Selected Island"
+disabled = true
+icon = ExtResource("2_n87mo")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="VSeparator" type="VSeparator" parent="."]
+layout_mode = 2
+
+[node name="bt_select_island" type="Button" parent="."]
+visible = false
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Select island"
+toggle_mode = true
+button_group = ExtResource("3_au5h8")
+icon = ExtResource("4_13tnj")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="bt_edit_island" type="Button" parent="."]
+visible = false
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Edit island vertexes"
+toggle_mode = true
+button_group = ExtResource("3_au5h8")
+icon = ExtResource("5_hm3oc")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="bt_move_island" type="Button" parent="."]
+visible = false
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Move Selected island"
+toggle_mode = true
+button_group = ExtResource("3_au5h8")
+icon = ExtResource("6_rp10j")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="bt_scale_island" type="Button" parent="."]
+visible = false
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Scale Selected island"
+toggle_mode = true
+button_group = ExtResource("3_au5h8")
+icon = ExtResource("7_ssakg")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="FloatIcons" type="Control" parent="."]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="FloatIcons"]
+visible = false
+layout_mode = 0
+offset_right = 55.0
+offset_bottom = 31.0
+text = "MOVE"
+
+[connection signal="pressed" from="bt_create_island" to="." method="_on_bt_create_island_pressed"]
+[connection signal="toggled" from="bt_select_island" to="." method="_on_bt_select_island_toggled"]
+[connection signal="toggled" from="bt_edit_island" to="." method="_on_bt_edit_island_toggled"]
+[connection signal="toggled" from="bt_move_island" to="." method="_on_bt_move_island_toggled"]
+[connection signal="toggled" from="bt_scale_island" to="." method="_on_bt_scale_island_toggled"]

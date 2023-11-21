@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3 uid="uid://dbxysvnde86ua"]
+
+[ext_resource type="Texture2D" uid="uid://dew36dj2ups55" path="res://addons/terrain_2d/icons/icon-move.svg" id="1_wfscb"]
+
+[sub_resource type="GDScript" id="GDScript_3d11w"]
+script/source = "extends Button
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+	pass
+
+
+func _on_pressed() -> void:
+	print(\"test\")
+	pass # Replace with function body.
+"
+
+[node name="ButtonMove" type="Button"]
+offset_right = 56.0
+offset_bottom = 56.0
+pivot_offset = Vector2(28, 28)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+icon = ExtResource("1_wfscb")
+icon_alignment = 1
+expand_icon = true
+script = SubResource("GDScript_3d11w")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]
