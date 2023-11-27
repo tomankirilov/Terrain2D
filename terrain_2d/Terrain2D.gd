@@ -2,7 +2,6 @@
 extends Node2D
 class_name Terrain2D
 
-
 @export var terrain_resource:TerrainResource :
 	set(value):
 		terrain_resource = value
@@ -16,6 +15,7 @@ var selected_island:Island2D = null
 
 func _enter_tree() -> void:
 	#set_process(false)
+	child_entered_tree.connect(_on_child_entered)
 	if terrain_resource != null: return
 	update_configuration_warnings()
 
@@ -26,132 +26,98 @@ func _get_configuration_warnings() -> PackedStringArray:
 	
 	return []
 
-func _process(delta: float) -> void:
-	if Terrain2DPlugin.selected_terrain != self: return
-	queue_redraw()
+func _on_child_entered(node:Node) -> void:
+	node.update_configuration_warnings()
+	if node is Island2D:
+		node.terrain = self
+	pass
 
 
+### NEW
+#func _process(delta: float) -> void:
+	#if Terrain2DPlugin.selected_terrain != self: return
+	#queue_redraw()
+#
 
 #
-#@export var polygons:PackedVector2Array
-#const POLY_SIZE := 10.0
-#var is_over_index:int = -1
-#var is_selecting_add:bool = false
-#var add_after_index:int = -1
+#func just_selected() -> void:
+	#queue_redraw()
+	#pass
+#
+#const POLY_SIZE = 16
+##called by Terrain2DPlugin
+#func _draw() -> void:
+	#if terrain_resource == null: return
+	#if terrain_resource.islands.size() < 1: return
+	#
+	#for island:Island2D in terrain_resource.islands:
+
+		#pass
+	#
+	#pass
+#
+#func draw_island_aabb(island:Island2D) -> void:
+	#var rect := island.get_aabb()
+	#rect.size = rect.size * 1.2
+	#rect.position = island.center
+	#draw_rect(rect, Color.SALMON,false,2.0)
+	#pass
+#
+
+#
+
+#
+#func draw_move_button(island:Island2D) -> void:
+	#var rect := Rect2()
+	#rect.size = Vector2(32,32)
+	#rect.position = island.center - (rect.size * .5)
+	#draw_texture_rect(Terrain2DPlugin.ICONS.MOVE, rect, false)
+	#draw_arc(island.center,10,0,360,16,Color.RED)
+	##print("draw move button")
+	#pass
 #
 #
-#@export var crmesh:bool = false :
-	#set(value):
-		#crmesh = value
-		#create_mesh()
+#
+#func left_clicked(pos:Vector2) -> void:
+	#check_move_island()
+	#
+#func check_move_island() -> void:
+	#var pos := get_local_mouse_position()
+	#print("clicked at: ", pos)
+	#for island:Island2D in terrain_resource.islands:
+		#if Terrain2DPlugin.is_circle_circle_collision(island.center, get_global_mouse_position(), 32.0):
+			#while(Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
+				#island.move_polygons(get_global_mouse_position())
+				#queue_redraw()
+				#await get_tree().process_frame
+			#island.recalculate_center()
+#
+#func check_edit_polygon(poly:Vector2, index:int, island:Island2D) -> void:
+	#if not Terrain2DPlugin.is_circle_circle_collision(poly,get_global_mouse_position(),POLY_SIZE * 6): return
+	#
+	#draw_custom_icon(poly,Color.AQUA)
+	#while(Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
+		#island.polygons[index] = get_global_mouse_position()
+		##island.recalculate_center()
+		#
+		#await get_tree().process_frame
+	#pass
+#
+#func check_edit_line(island:Island2D) -> void:
+	#for i in range(island.polygons.size()-1):
+		#var polygon_start := island.polygons[i]
+		#var polygon_end := island.polygons[(i+1) % island.polygons.size()]
+		#if not Terrain2DPlugin.is_circle_line_collision(polygon_start,polygon_end,get_global_mouse_position(),POLY_SIZE,.9): continue
+		#draw_line(polygon_start,polygon_end,Color.AQUA,3.0)
+		#var line_center := Terrain2DPlugin.get_line_midpoint(polygon_start, polygon_end)
+		#draw_custom_icon(line_center, Color.WHITE, Terrain2DPlugin.ICONS.ADD)
+		#if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			#island.polygons.insert(i+1,get_global_mouse_position())
+			#queue_redraw()
+			#break
+	#pass
 
-func create_basic_shape(island:Island2D) -> void: #create the initial shape
-	var DIST := 64.0
-	island.add_polygon(Vector2(-DIST,-DIST))
-	island.add_polygon(Vector2(DIST,-DIST))
-	island.add_polygon(Vector2(DIST,DIST))
-	island.add_polygon(Vector2(-DIST,DIST))
-	
-	terrain_resource.islands.push_back(island)
-	print("basic shape created")
-	
-	queue_redraw()
-	
-	
-	pass
-
-func just_selected() -> void:
-	queue_redraw()
-	pass
-
-const POLY_SIZE = 16
-#called by Terrain2DPlugin
-func _draw() -> void:
-	if terrain_resource == null: return
-	if terrain_resource.islands.size() < 1: return
-	
-	for island:Island2D in terrain_resource.islands:
-		draw_polygons_connection(island)
-		draw_move_button(island)
-		check_edit_line(island)
-		var poly_index:int = 0
-		for poly:Vector2 in island.polygons:
-			draw_custom_icon(poly)
-			check_edit_polygon(poly,poly_index, island)
-			poly_index += 1
-		#draw_island_aabb(island)
-		pass
-	
-	pass
-
-func draw_island_aabb(island:Island2D) -> void:
-	var rect := island.get_aabb()
-	rect.size = rect.size * 1.2
-	rect.position = island.center
-	draw_rect(rect, Color.SALMON,false,2.0)
-	pass
-
-func draw_polygons_connection(island:Island2D) -> void:
-	draw_polyline(island.polygons,Color.WHITE_SMOKE,2) # all other connections
-	draw_line(island.polygons[-1],island.polygons[0],Color.WHITE_SMOKE, 2) #the last polygon connects to the first one
-	pass
-
-func draw_custom_icon(at:Vector2, modulate:Color=Color.WHITE, icon:CompressedTexture2D=Terrain2DPlugin.ICONS.POLY,icon_scale:float=1.0) -> void:
-	var rect := Rect2(Vector2.ONE * at,Vector2(POLY_SIZE*2,POLY_SIZE*2))
-	rect.size *= icon_scale
-	rect.position -= POLY_SIZE * Vector2.ONE
-	draw_texture_rect(icon,rect, false, modulate)
-	pass
-
-func draw_move_button(island:Island2D) -> void:
-	var rect := Rect2()
-	rect.size = Vector2(32,32)
-	rect.position = island.center - (rect.size * .5)
-	draw_texture_rect(Terrain2DPlugin.ICONS.MOVE, rect, false)
-	draw_arc(island.center,10,0,360,16,Color.RED)
-	#print("draw move button")
-	pass
-
-
-
-func left_clicked(pos:Vector2) -> void:
-	check_move_island()
-	
-func check_move_island() -> void:
-	var pos := get_local_mouse_position()
-	print("clicked at: ", pos)
-	for island:Island2D in terrain_resource.islands:
-		if Terrain2DPlugin.is_circle_circle_collision(island.center, get_global_mouse_position(), 32.0):
-			while(Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
-				island.move_polygons(get_global_mouse_position())
-				queue_redraw()
-				await get_tree().process_frame
-			island.recalculate_center()
-
-func check_edit_polygon(poly:Vector2, index:int, island:Island2D) -> void:
-	if not Terrain2DPlugin.is_circle_circle_collision(poly,get_global_mouse_position(),POLY_SIZE * 6): return
-	
-	draw_custom_icon(poly,Color.AQUA)
-	while(Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
-		island.polygons[index] = get_global_mouse_position()
-		#island.recalculate_center()
-		
-		await get_tree().process_frame
-	pass
-
-func check_edit_line(island:Island2D) -> void:
-	for i in range(island.polygons.size()-1):
-		var polygon_start := island.polygons[i]
-		var polygon_end := island.polygons[(i+1) % island.polygons.size()]
-		if not Terrain2DPlugin.is_circle_line_collision(polygon_start,polygon_end,get_global_mouse_position(),POLY_SIZE,.9): continue
-		draw_line(polygon_start,polygon_end,Color.AQUA,3.0)
-		var line_center := Terrain2DPlugin.get_line_midpoint(polygon_start, polygon_end)
-		draw_custom_icon(line_center, Color.WHITE, Terrain2DPlugin.ICONS.ADD)
-		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			island.polygons.insert(i+1,get_global_mouse_position())
-			queue_redraw()
-			break
-	pass
+###NEW
 
 #
 #func _draw() -> void:

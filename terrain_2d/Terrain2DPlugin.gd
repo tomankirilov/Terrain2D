@@ -7,6 +7,7 @@ var tools_created:bool = false
 const T2D_MENU_BUTTONS = preload("res://addons/terrain_2d/ui/t2d_menu_buttons.tscn")
 static var menu_buttons:Terrain2D_MenuButtons = null
 static var selected_terrain:Terrain2D = null
+static var selected_island:Island2D = null
 
 # PLUGIN CONFIGURATION ============
 
@@ -43,19 +44,15 @@ func _exit_tree() -> void:
 func on_selection_changed() -> void:
 	var selection := EditorInterface.get_selection()
 	if selection.get_selected_nodes().size() != 1: return
-	var terrain := selection.get_selected_nodes()[0]
-	if not terrain is Terrain2D: 
-		show_tools(false)
-		selected_terrain = null
-		return
-	else: 
-		show_tools(true)
-		
+	var selected := selection.get_selected_nodes()[0]
 	
-	selected_terrain = terrain
-	terrain.just_selected()
+	if selected is Island2D:
+		selected_island = selected
+		selected.just_selected()
+	else:
+		selected_island.unselected()
+		selected_island = null
 	
-	print("selected terrain")
 	pass
 
 var first_time_selecting_terrain:bool = true
