@@ -9,11 +9,14 @@ static var menu_buttons:Terrain2D_MenuButtons = null
 static var selected_terrain:Terrain2D = null
 static var selected_island:Island2D = null
 
+const COLOR_UNSELECTED:Color = Color.DIM_GRAY
+const COLOR_SELECTED:Color = Color.WHITE
+
 # PLUGIN CONFIGURATION ============
 
 func _enter_tree() -> void:
-	
-	
+
+
 	add_custom_type("Terrain2D", "Node", Terrain2D, load("res://addons/terrain_2d/icons/icon-terrain-2d.svg"))
 	EditorInterface.get_selection().selection_changed.connect(on_selection_changed)
 	if menu_buttons == null:
@@ -35,37 +38,42 @@ func _handles(object: Object) -> bool:
 
 func _exit_tree() -> void:
 	remove_custom_type("Terrain2D")
-	
+
 	menu_buttons = null
 	# Clean-up of the plugin goes here.
 	pass
 
 
 func on_selection_changed() -> void:
+
 	var selection := EditorInterface.get_selection()
 	if selection.get_selected_nodes().size() != 1: return
 	var selected := selection.get_selected_nodes()[0]
-	
+
+	if selected_island != null:
+		selected_island.unselected()
+		selected_island = null
+
 	if selected is Island2D:
 		selected_island = selected
 		selected.just_selected()
-	else:
-		selected_island.unselected()
-		selected_island = null
-	
+
+	if selected_island == null: return
+	print("selected islands: " + selected_island.name)
+
 	pass
 
 var first_time_selecting_terrain:bool = true
 
 func show_tools(visible:bool) -> void:
 	menu_buttons.visible = visible
-	
+
 	if first_time_selecting_terrain:
 		first_time_selecting_terrain = false
 		do_hack_editor()
-	
+
 	show_default_godot_tools(!visible)
-	
+
 	pass
 
 #func _input(event: InputEvent) -> void:
@@ -110,14 +118,14 @@ const ICONS := {
 var tools_panel:Control = null
 
 func do_hack_editor() -> void:
-	
+
 	#get the CONTINER_CANVAS_EDITOR_MENU node manually
 	tools_panel = menu_buttons.get_parent().get_parent().get_parent()
 	# remove my custom menu_buttons from this container
 	remove_control_from_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU,menu_buttons)
 	# add it again manually
 	tools_panel.add_child(menu_buttons)
-	
+
 	#you may ask why the fuck you are doing this shit dude?
 	# well my friend, basically when I'm calling (show_default_godot_tools()) it will hide this container
 	# but I still want to keep menu_buttons visible
@@ -125,9 +133,9 @@ func do_hack_editor() -> void:
 
 func show_default_godot_tools(show:bool) -> void:
 	#this is a hacky way to hide godot default tools, do not replicate at home!
-	
+
 	for child in tools_panel.get_children():
-		
+
 		if child is HBoxContainer:
 			for c in child.get_children():
 				c.visible = show
@@ -142,7 +150,7 @@ var current_id :int = -1
 const DATA_PATH := "res://addons/terrain_2d/data.cfg"
 const RESOURCE_PATH := "res://addons/terrain_2d/%s.tres"
 func _on_create_island_pressed() -> void:
-	if selected_terrain == null: 
+	if selected_terrain == null:
 		push_error("no Terrain2D is selected!")
 		return
 	var island := Island2D.new()
@@ -162,7 +170,7 @@ func _on_move_island_pressed() -> void:
 
 static func create_aabb(island:Island2D) -> Rect2:
 	var result := Rect2()
-	
+
 	var _min := island.polygons[0]
 	var _max := island.polygons[0]
 
@@ -171,11 +179,11 @@ static func create_aabb(island:Island2D) -> Rect2:
 		_min.y = min(_min.y, polygon.y)
 		_max.x = max(_max.x, polygon.x)
 		_max.y = max(_max.x, polygon.y)
-		
-	
+
+
 	result.size = (_max - _min) * 1.2
 	result.position = ((_min + _max) / 2) - result.size / 2
-	
+
 	return result
 
 static func is_circle_circle_collision(circle_a:Vector2, circle_b:Vector2, radius:float) -> bool:
@@ -194,5 +202,5 @@ static func is_circle_line_collision(point_a:Vector2, point_b:Vector2, point_c:V
 	distance = clamp(distance,0 + (line_length - (line_length * clamp_offset)), line_length * clamp_offset)
 	var projection := direction * distance
 	var closest := point_a + projection
-	
+
 	return Terrain2DPlugin.is_circle_circle_collision(point_c, closest, radius)
